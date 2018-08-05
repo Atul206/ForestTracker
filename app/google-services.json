@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "333923253646",
+    "firebase_url": "https://gramintracker.firebaseio.com",
+    "project_id": "gramintracker",
+    "storage_bucket": "gramintracker.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:333923253646:android:2c1542870a457b3e",
+        "android_client_info": {
+          "package_name": "com.gramin.sakhala.gramintracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "333923253646-5uuh7oclma343sj9mjbfvh6q31c5eraj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gramin.sakhala.gramintracker",
+            "certificate_hash": "412a7505d770bc5388921f71735ca1289df6eb07"
+          }
+        },
+        {
+          "client_id": "333923253646-8cg9nk84qo0r21b6l9f7snlkv1rnu06e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCx-0UZSwpalrBB6IkVZErgbX2hrKZKmk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "333923253646-8cg9nk84qo0r21b6l9f7snlkv1rnu06e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
