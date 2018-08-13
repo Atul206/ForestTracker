@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GraminTracker</string>
+    <string name="app_name">Forest Tracker</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
@@ -8,10 +8,35 @@
     <string name="action_sign_in_short">Sign in</string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_invalid_password">This password is too short</string>
+    <string name="error_invalid_field">All field are mandatory</string>
     <string name="error_incorrect_password">This password is incorrect</string>
     <string name="error_field_required">This field is required</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
     <string name="title_activity_main">MainActivity</string>
+
+    <string name="details">Details</string>
+
+    <string name="forest_track">Forest</string>
+    <string name="forestArea">Vanmandal name</string>
+    <string name="office_name">Parikshetra name</string>
+    <string name="location">Van kshetra</string>
+    <string name="compartmentNo">Compartment number</string>
+    <string name="plantingArea">Ropan kshetrafal</string>
+    <string name="plantingYear">Ropan year</string>
+    <string name="plantingPlants">Ropit plants</string>
+    <string name="Submit">Submit</string>
+    <string name="Stop">Stop</string>s
+    <string name="Start">Start</string>
+    <string name="title_activity_conclusion">ConclusionActivity</string>
+    <string name="conclusion">Conclusion</string>
+    <string name="file_name">File name : </string>
+    <string name="distance">Distance : </string>
+    <string name="area">Area : </string>
+    <string name="login">Login : </string>
+    <string name="deparmanet_str">Vibhagiy yojna</string>
+    <string name="scheme_secon">Hariyali prasar yojna</string>
+    <string name="hindi">HINDI</string>
+    <string name="english">ENGLISH</string>
 </resources>

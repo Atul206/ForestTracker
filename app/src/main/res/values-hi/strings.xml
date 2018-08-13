@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">Forest Tracker</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password (optional)</string>
+    <string name="action_sign_in">सिग्न इन या रजिस्टर</string>
+    <string name="action_sign_in_short">सिग्न इन</string>
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email
+        completions."
+    </string>
+    <string name="title_activity_main">MainActivity</string>
+
+    <string name="details">डिटेल्स</string>
+
+    <string name="forest_track">फारेस्ट</string>
+    <string name="forestArea">वनमंडल क्षेत्र</string>
+    <string name="office_name">परिक्षेत्र का नाम</string>
+    <string name="location">वन क्षेत्र</string>
+    <string name="compartmentNo">कम्पार्टमेंट संख्या</string>
+    <string name="plantingArea">रोपण क्षेत्र</string>
+    <string name="plantingYear">रोपण वर्ष</string>
+    <string name="plantingPlants">रोपण पेड़</string>
+    <string name="Submit">जमा करें</string>
+    <string name="Stop">बंद करें </string>
+    <string name="Start">शुरू करें </string>
+    <string name="title_activity_conclusion">परिणाम</string>
+    <string name="conclusion">परिणाम</string>
+    <string name="file_name">फाइल का नाम : </string>
+    <string name="distance">दूरी : </string>
+    <string name="area">क्षेत्र : </string>
+    <string name="login">लॉग इन करें : </string>
+    <string name="deparmanet_str">विभागीय योजना</string>
+    <string name="scheme_secon">हरियाली प्रसार योजना</string>
+    <string name="hindi">HINDI</string>
+    <string name="english">ENGLISH</string>
+</resources>

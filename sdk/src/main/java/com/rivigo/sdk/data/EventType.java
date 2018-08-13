@@ -1,0 +1,8 @@
+package com.rivigo.sdk.data;
+
+/**
+ * Created by gauravk on 2/7/16.
+ */
+public enum EventType {
+    LEFT, SHARP_LEFT, RIGHT, SHARP_RIGHT, ACCELERATION, DEACCELERATION, BREAK,REVERSE,LEFT_LANE,RIGHT_LANE,SPEED_BERAKER,UTURN,STRAIGHT_DRIVE
+}

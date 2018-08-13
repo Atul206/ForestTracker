@@ -3,22 +3,25 @@ package com.gramin.sakhala.gramintracker.activity;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.LoaderManager.LoaderCallbacks;
-
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.CursorLoader;
+import android.content.Intent;
+import android.content.IntentSender;
 import android.content.Loader;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
-
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -29,16 +32,24 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
@@ -49,12 +60,16 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.gramin.sakhala.gramintracker.R;
 import com.gramin.sakhala.gramintracker.callback.OnLoginTrigger;
 import com.gramin.sakhala.gramintracker.helper.FirebaseHelper;
-import com.gramin.sakhala.gramintracker.helper.GoogleSignHelper;
+import com.gramin.sakhala.gramintracker.helper.LocaleHelper;
+import com.gramin.sakhala.gramintracker.service.UploadAlarmReceiver;
+import com.gramin.sakhala.gramintracker.util.Prefs;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.READ_CONTACTS;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 /**
  * A login screen that offers login via email/password.
@@ -64,7 +79,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     /**
      * Id to identity READ_CONTACTS permission request.
      */
+    public static final int REQUEST_CHECK_SETTINGS = 0x1;
     private static final int REQUEST_READ_CONTACTS = 0;
+    private static final int REQUEST_LOCATION_CONTACTS = 1;
+    private static final int REQUEST_WRITE_STORAGE = 2;
 
     private static final int RC_SIGN_IN = 1;
 
@@ -77,6 +95,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private FirebaseAuth mAuth;
 
     private FirebaseAuth.AuthStateListener mListener;
+
+    private Button language;
 
 
     /**
@@ -96,6 +116,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    Button mEmailSignInButton;
+    RelativeLayout firstScheme;
+    RelativeLayout secondScheme;
+    ImageView mEmailSignInGoogleIco;
+    Activity activity;
 
     private OnLoginTrigger onLoginTrigger;
 
@@ -104,8 +129,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         onLoginTrigger = this;
+        activity = this;
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+        language = (Button) findViewById(R.id.language);
         populateAutoComplete();
 
         mPasswordView = (EditText) findViewById(R.id.password);
@@ -120,11 +147,64 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        if(LocaleHelper.getLanguage(activity).equals("hi")){
+            language.setText(getString(R.string.english));
+            Prefs.putLocaleLang(activity ,"hi");
+        }else{
+            language.setText(getString(R.string.hindi));
+            Prefs.putLocaleLang(activity, "en");
+        }
+
+        language.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(LocaleHelper.getLanguage(activity).equals("hi")) {
+                    LocaleHelper.setLocale(activity, "en");
+                }else{
+                    LocaleHelper.setLocale(activity, "hi");
+                }
+
+                //It is required to recreate the activity to reflect the change in UI.
+                recreate();
+            }
+        });
+
+        mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        mEmailSignInGoogleIco = (ImageView) findViewById(R.id.google_icon);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 signIn();
+            }
+        });
+
+        firstScheme = (RelativeLayout) findViewById(R.id.btn_first);
+
+        secondScheme = (RelativeLayout) findViewById(R.id.btn_second);
+
+        firstScheme.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(mAuth.getCurrentUser() != null) {
+                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    intent.putExtra("title",getString(R.string.deparmanet_str));
+                    startActivity(intent);
+                }else{
+                    Snackbar.make(findViewById(R.id.main_layout), "Please login !", Snackbar.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        secondScheme.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(mAuth.getCurrentUser() != null) {
+                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    intent.putExtra("title",getString(R.string.deparmanet_str));
+                    startActivity(intent);
+                }else{
+                    Snackbar.make(findViewById(R.id.main_layout), "Please login !", Snackbar.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -133,24 +213,37 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
 
                 if(firebaseAuth.getCurrentUser() != null) {
-                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    //startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    //finish();
                 }
             }
         };
-
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
 
         initGSignInstace();
         initGoogleClientApiInstace();
 
+
         mAuth = FirebaseAuth.getInstance();
+        mAuth.addAuthStateListener(mListener);
+
+        if(mAuth.getCurrentUser() != null) {
+            mEmailSignInButton.setVisibility(View.INVISIBLE);
+            mEmailSignInButton.setEnabled(false);
+            mEmailSignInGoogleIco.setVisibility(View.INVISIBLE);
+        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mAuth.addAuthStateListener(mListener);
+        displayLocationSettingsRequest(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     private void populateAutoComplete() {
@@ -158,16 +251,78 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             return;
         }
 
+        if (!mayRequestStorage()) {
+            return;
+        }
+
+        if (!mayRequestLocation()) {
+            return;
+        }
+
+
+
         getLoaderManager().initLoader(0, null, this);
     }
 
-    private boolean mayRequestContacts() {
+    private boolean mayRequestLocation() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return true;
         }
+
+        if (checkSelfPermission(ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
+
+        if (shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION)) {
+            Snackbar.make(mEmailView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
+                    .setAction(android.R.string.ok, new View.OnClickListener() {
+                        @Override
+                        @TargetApi(Build.VERSION_CODES.M)
+                        public void onClick(View v) {
+                            requestPermissions(new String[]{ACCESS_FINE_LOCATION}, REQUEST_LOCATION_CONTACTS);
+                        }
+                    });
+        } else {
+            requestPermissions(new String[]{ACCESS_FINE_LOCATION}, REQUEST_LOCATION_CONTACTS);
+        }
+
+        return false;
+    }
+
+    private boolean mayRequestStorage() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true;
+        }
+
+        if (checkSelfPermission(WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
+
+        if (shouldShowRequestPermissionRationale(WRITE_EXTERNAL_STORAGE)) {
+            Snackbar.make(mEmailView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
+                    .setAction(android.R.string.ok, new View.OnClickListener() {
+                        @Override
+                        @TargetApi(Build.VERSION_CODES.M)
+                        public void onClick(View v) {
+                            requestPermissions(new String[]{WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
+                        }
+                    });
+        } else {
+            requestPermissions(new String[]{WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
+        }
+
+        return false;
+    }
+
+    private boolean mayRequestContacts(){
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true;
+        }
+
         if (checkSelfPermission(READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
             return true;
         }
+
         if (shouldShowRequestPermissionRationale(READ_CONTACTS)) {
             Snackbar.make(mEmailView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
                     .setAction(android.R.string.ok, new View.OnClickListener() {
@@ -190,6 +345,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         if (requestCode == REQUEST_READ_CONTACTS) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                populateAutoComplete();
+            }
+        }
+
+        if (requestCode == REQUEST_LOCATION_CONTACTS) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                populateAutoComplete();
+            }
+        }
+
+        if (requestCode == REQUEST_WRITE_STORAGE) {
             if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 populateAutoComplete();
             }
@@ -471,9 +638,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount account){
+        if(account == null || account.getId() == null) {
+            Snackbar.make(findViewById(R.id.main_layout), "Please sign in first", Snackbar.LENGTH_SHORT).show();
+            return;
+        }
         Log.d(TAG, "firebaseAuthWithGoogle:" + account.getId());
-        startActivity(new Intent(LoginActivity.this, MainActivity.class));
-        /*
+
         AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -483,17 +653,80 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithCredential:success");
                             Snackbar.make(findViewById(R.id.main_layout), "Authentication Success.", Snackbar.LENGTH_SHORT).show();
-                            //FirebaseUser user = mAuth.getCurrentUser();
-                            //updateUI(user);
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            updateUI(user);
                         } else {
+                            //startActivity(new Intent(LoginActivity.this, MainActivity.class));
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithCredential:failure", task.getException());
                             Snackbar.make(findViewById(R.id.main_layout), "Authentication Failed.", Snackbar.LENGTH_SHORT).show();
                             //updateUI(null);
+                            //finish();
                         }
                     }
                 });
-                */
     }
+
+    private void updateUI(FirebaseUser user){
+
+        AlertDialog.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
+        } else {
+            builder = new AlertDialog.Builder(this);
+        }
+        builder.setTitle(getString(R.string.login))
+                .setMessage(user.getEmail() + " login successfully !")
+                .setIcon(R.drawable.tree_nav_ico)
+                .show();
+
+        mEmailSignInButton.setVisibility(View.INVISIBLE);
+        mEmailSignInButton.setEnabled(false);
+        mEmailSignInGoogleIco.setVisibility(View.INVISIBLE);
+    }
+
+    public void displayLocationSettingsRequest(final Context context) {
+        final GoogleApiClient googleApiClient = new GoogleApiClient.Builder(context)
+                .addApi(LocationServices.API).build();
+        googleApiClient.connect();
+
+        final LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(10000 / 2);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true);
+        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(@NonNull LocationSettingsResult result) {
+                final Status status = result.getStatus();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        //Log.i(TAG, "All location settings are satisfied.");
+                        googleApiClient.disconnect();
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        //Toast.makeText(HomeActivity.this, "Location settings are not satisfied. Show the user a dialog to upgrade location settings ", Toast.LENGTH_SHORT).show();
+                        try {
+                            status.startResolutionForResult(activity, REQUEST_CHECK_SETTINGS);
+                        } catch (IntentSender.SendIntentException e) {
+                            //Toast.makeText(HomeActivity.this, "PendingIntent unable to execute request.", Toast.LENGTH_SHORT).show();
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        //Toast.makeText(HomeActivity.this, "Location settings are inadequate, and cannot be fixed here. Dialog not created.", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        });
+
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
+    }
+
 }
 
