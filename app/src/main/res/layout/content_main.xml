@@ -24,7 +24,7 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:text="@string/details"
-            android:textColor="@color/colorPrimary"
+            android:textColor="@color/colorBtn"
             android:textSize="@dimen/title_margin"
             android:textStyle="bold" />
 

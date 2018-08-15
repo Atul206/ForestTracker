@@ -24,6 +24,7 @@ public class AlarmBroadcast extends BroadcastReceiver {
         Intent dataSyncServiceIntent = new Intent(context, DataSyncService.class);
         context.sendBroadcast(new Intent());
         context.startService(dataSyncServiceIntent);
+        //context.getColorStateList()
 
     }
 }

@@ -17,7 +17,7 @@ public class LocationModel {
     String _payload;
 
 
-    private static DecimalFormat df2 = new DecimalFormat(".####");
+    private static DecimalFormat df2 = new DecimalFormat(".#######");
 
     public LocationModel(String _id, String _source_id, String _latitude, String _longitude, String _speed, String _dataClient, String _date_time, String payload) {
         this._id = Integer.valueOf(_id);

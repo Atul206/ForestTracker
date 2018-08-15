@@ -1,26 +1,15 @@
 package com.gramin.sakhala.gramintracker.service;
 
-import android.Manifest;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationManager;
-import android.os.BatteryManager;
 import android.os.IBinder;
-import android.os.SystemClock;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
-import com.gramin.sakhala.gramintracker.activity.GPSTrackingBaseActivity;
 import com.gramin.sakhala.gramintracker.dto.LocationDTO;
 import com.gramin.sakhala.gramintracker.dto.SensorGpsDTO;
-import com.gramin.sakhala.gramintracker.helper.AlarmBroadcast;
 import com.gramin.sakhala.gramintracker.util.Constant;
 import com.gramin.sakhala.gramintracker.util.Prefs;
 import com.rivigo.sdk.database.DatabaseHandler;
@@ -30,9 +19,6 @@ import com.rivigo.sdk.manager.GoogleLocationManager;
 import com.rivigo.sdk.mqtt.MQTTManager;
 
 import org.joda.time.DateTime;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 /**
@@ -54,6 +40,8 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
     private DatabaseHandler db;
 
     private boolean officerStartInspection = true;
+    private Location lastLocation = null;
+
     public static boolean isRunning() {
         return isRunning;
     }
@@ -97,10 +85,10 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
         /* we don't need to be exact in our frequency, try to conserve at least
          * a little battery */
         try {
-            alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-            Intent i = new Intent(this, AlarmBroadcast.class);
-            pendingAlarm = PendingIntent.getBroadcast(this, 0, i, 0);
-            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), freqSeconds*1000, pendingAlarm);
+            //alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+            //Intent i = new Intent(this, AlarmBroadcast.class);
+            //pendingAlarm = PendingIntent.getBroadcast(this, 0, i, 0);
+            //alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), freqSeconds*1000, pendingAlarm);
 
         } catch (Exception e) {
             isRunning = false;
@@ -138,9 +126,9 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
             e.printStackTrace();
         }
 
-        if (pendingAlarm != null) {
-            alarmManager.cancel(pendingAlarm);
-        }
+        //if (pendingAlarm != null) {
+          //  alarmManager.cancel(pendingAlarm);
+        //}
         //mGoogleLocationManager.clearContext();
         isRunning = false;
     }
@@ -218,21 +206,41 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
 
 
     private void saveLocation(Location location) {
-        if (location != null) {
-            if(officerStartInspection) {
-                LocationDTO locationDTO = new LocationDTO();
-                locationDTO.setLatitude(location.getLatitude());
-                locationDTO.setLongitude(location.getLongitude());
-                Prefs.startLocation(GPSTrackerService.this, locationDTO);
-                officerStartInspection = false;
-            }
+        this.lastLocation = location;
+    }
+
+    private Location getLastLocation(){
+       return this.lastLocation;
+    }
+
+    private boolean isLocationValid(Location lastLocation, Location currentLocation){
+        if(lastLocation == null) {
+            this.lastLocation = currentLocation;
+            return true;
         }
+        double distance = lastLocation.distanceTo(currentLocation);
+        Log.d(MQTTManager.TAG, "" + distance);
+        if(distance <= 10d){
+            return true;
+        }
+        return false;
+    }
+
+    private void calculcateAndSendDistanceAndArea(Location location){
+        double distanceTo  = this.lastLocation.distanceTo(location);
+        Intent intent = new Intent();
+        intent.putExtra("distance", distanceTo);
+        sendBroadcast(intent);
     }
 
     @Override
     public void onLocationChange(Location location) {
-        Log.d(MQTTManager.TAG, "NEW LOCATION COME");
-        sendLocation(location);
-        saveLocation(location);
+        if(isLocationValid(getLastLocation(), location)) {
+            Log.d(MQTTManager.TAG, "NEW LOCATION COME");
+            sendLocation(location);
+            calculcateAndSendDistanceAndArea(location);
+            saveLocation(location);
+        }
+
     }
 }

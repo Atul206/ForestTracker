@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.gramin.sakhala.gramintracker.R;
@@ -30,6 +31,7 @@ public class MainActivity extends GPSTrackingBaseActivity {
     private EditText plantingArea;
     private EditText plantingYear;
     private EditText plantingPlants;
+    private TextView title;
 
     private Button trackStartButton;
 
@@ -49,6 +51,17 @@ public class MainActivity extends GPSTrackingBaseActivity {
             }
         };*/
 
+       if(getIntent() != null) {
+           title.setText(getIntent().getStringExtra("title"));
+       }
+
+        if(GPSTrackerService.isRunning()){
+            Intent intent = new Intent(MainActivity.this, TrackingActivity.class);
+            intent.putExtra("form_data", Prefs.getFuzData(this));
+            startActivity(intent);
+        }
+
+        Prefs.putFuzData(this, null);
         trackStartButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -139,6 +152,8 @@ public class MainActivity extends GPSTrackingBaseActivity {
         plantingArea = (EditText)findViewById(R.id.plantingArea);
         plantingYear = (EditText)findViewById(R.id.plantingYear);
         plantingPlants = (EditText)findViewById(R.id.plantingPlants);
+
+        title = (TextView)findViewById(R.id.detail_title);
 
         trackStartButton = (Button) findViewById(R.id.trackButton);
 

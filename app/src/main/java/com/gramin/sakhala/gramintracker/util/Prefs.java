@@ -2,6 +2,7 @@ package com.gramin.sakhala.gramintracker.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.location.Location;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -198,6 +199,15 @@ public class Prefs implements Constant {
         String data = preferences.getString(PENDIND_POD_LIST, null);
         Gson gson = new Gson();
         return gson.fromJson(data, new TypeToken<ArrayList<PendingFileDto>>() {
+        }.getType());
+    }
+
+    public static LocationDTO getLastLocation(GPSTrackerService gpsTrackerService) {
+        if (gpsTrackerService == null) return null;
+        SharedPreferences preferences = Prefs.get(gpsTrackerService);
+        String data = preferences.getString(GPS_LOCATION, null);
+        Gson gson = new Gson();
+        return gson.fromJson(data, new TypeToken<ArrayList<LocationDTO>>() {
         }.getType());
     }
 }

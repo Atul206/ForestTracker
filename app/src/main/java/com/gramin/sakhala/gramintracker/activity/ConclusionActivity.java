@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -12,6 +13,8 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.gramin.sakhala.gramintracker.Application;
 import com.gramin.sakhala.gramintracker.R;
 import com.gramin.sakhala.gramintracker.dto.PendingFileDto;
@@ -28,7 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConclusionActivity extends AppCompatActivity {
+public class ConclusionActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     TextView area, length, file;
     public static final int PENDING_POD_BROADCAST_REQUEST_CODE = 0x4;
@@ -43,6 +46,9 @@ public class ConclusionActivity extends AppCompatActivity {
     String fileName;
     PendingIntent pendingIntent;
     AlarmManager manager;
+
+
+    GoogleMap.SnapshotReadyCallback snapshotReadyCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +70,12 @@ public class ConclusionActivity extends AppCompatActivity {
         length.setText(distance + " m.");
         area.setText(areaStr + " Sqm.");
 
+        snapshotReadyCallback = new GoogleMap.SnapshotReadyCallback() {
+            @Override
+            public void onSnapshotReady(Bitmap bitmap) {
+
+            }
+        };
         initKml();
 
     }
@@ -112,6 +124,11 @@ public class ConclusionActivity extends AppCompatActivity {
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleHelper.onAttach(newBase));
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+
     }
 
     class BackGroundTask extends AsyncTask<String, Void, Void> {
@@ -167,7 +184,6 @@ public class ConclusionActivity extends AppCompatActivity {
     public void initAlaram() {
         Intent alarmIntent = new Intent(this, UploadAlarmReceiver.class);
         pendingIntent = PendingIntent.getBroadcast(this, PENDING_POD_BROADCAST_REQUEST_CODE, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
     }
 
 

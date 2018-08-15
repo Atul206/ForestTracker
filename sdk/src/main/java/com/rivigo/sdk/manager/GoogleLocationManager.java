@@ -21,8 +21,8 @@ public class GoogleLocationManager implements GoogleApiClient.ConnectionCallback
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
 
-    public final static int FAST_LOCATION_FREQUENCY = 15000;
-    public final static int LOCATION_FREQUENCY = 30000;
+    public final static int FAST_LOCATION_FREQUENCY = 1000;
+    public final static int LOCATION_FREQUENCY = 3000;
     private static GoogleLocationManager mInstance = null;
     protected GoogleApiClient mGoogleApiClient;
     protected GoogleLocationListener listener;

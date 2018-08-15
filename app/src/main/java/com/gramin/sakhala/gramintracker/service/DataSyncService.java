@@ -49,8 +49,7 @@ public class DataSyncService extends IntentService implements Constant, OnMQTTCo
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        db = new DatabaseHandler(this);
-
+        //db = new DatabaseHandler(this);
     }
 
     @Override

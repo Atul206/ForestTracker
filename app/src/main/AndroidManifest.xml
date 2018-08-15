@@ -43,9 +43,9 @@
             android:name=".service.DataSyncService"
             android:exported="true" />
 
-        <receiver
+        <!--<receiver
             android:name=".helper.AlarmBroadcast"
-            android:enabled="true" />
+            android:enabled="true" />-->
 
         <activity android:name=".activity.TrackingActivity"
             android:theme="@style/AppTheme.NoActionBar">

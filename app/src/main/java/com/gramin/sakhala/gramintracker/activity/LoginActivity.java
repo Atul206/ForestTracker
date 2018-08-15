@@ -61,6 +61,7 @@ import com.gramin.sakhala.gramintracker.R;
 import com.gramin.sakhala.gramintracker.callback.OnLoginTrigger;
 import com.gramin.sakhala.gramintracker.helper.FirebaseHelper;
 import com.gramin.sakhala.gramintracker.helper.LocaleHelper;
+import com.gramin.sakhala.gramintracker.service.GPSTrackerService;
 import com.gramin.sakhala.gramintracker.service.UploadAlarmReceiver;
 import com.gramin.sakhala.gramintracker.util.Prefs;
 
@@ -200,7 +201,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             public void onClick(View view) {
                 if(mAuth.getCurrentUser() != null) {
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    intent.putExtra("title",getString(R.string.deparmanet_str));
+                    intent.putExtra("title",getString(R.string.scheme_secon));
                     startActivity(intent);
                 }else{
                     Snackbar.make(findViewById(R.id.main_layout), "Please login !", Snackbar.LENGTH_SHORT).show();
@@ -232,6 +233,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mEmailSignInButton.setVisibility(View.INVISIBLE);
             mEmailSignInButton.setEnabled(false);
             mEmailSignInGoogleIco.setVisibility(View.INVISIBLE);
+        }
+
+        if(GPSTrackerService.isRunning()){
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            intent.putExtra("title",getString(R.string.deparmanet_str));
+            startActivity(intent);
         }
     }
 
