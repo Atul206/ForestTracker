@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="10dp"
+    android:background="@color/colorPrimary"
+    tools:context="com.gramin.sakhala.gramintracker.activity.DivisionActivity">
+
+    <TextView
+
+        android:layout_marginLeft="13dp"
+        android:gravity="center"
+        android:textStyle="bold"
+        android:textColor="@color/textColor"
+        app:layout_constraintBaseline_toBaselineOf="@id/division_icon"
+        android:text="Divisions"
+        app:layout_constraintLeft_toRightOf="@id/division_icon"
+        android:id="@+id/division_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+
+</android.support.constraint.ConstraintLayout>

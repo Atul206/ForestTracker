@@ -3,11 +3,17 @@ package com.gramin.sakhala.gramintracker.service;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.SphericalUtil;
 import com.gramin.sakhala.gramintracker.dto.LocationDTO;
 import com.gramin.sakhala.gramintracker.dto.SensorGpsDTO;
 import com.gramin.sakhala.gramintracker.util.Constant;
@@ -29,6 +35,10 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
 
     private static final String TAG = "GPSTrackerService";
 
+    public static final String ACTION_FROM_SERVICE = "com.gramin.sakhala.gramintracker.FROM_SERVICE";
+
+    public static final String ACTION_TO_SERVICE = "com.gramin.sakhala.gramintracker.TO_SERVICE";
+
     private static final String UNAVAIALABLE = "NA";
     private static boolean isRunning = false;
 
@@ -40,7 +50,27 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
     private DatabaseHandler db;
 
     private boolean officerStartInspection = true;
+
     private Location lastLocation = null;
+
+
+
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+
+        @Override
+
+        public void onReceive(Context context, Intent intent) {
+
+            Log.d(TAG, "BroadcastService" +  "Service received: ");
+
+            if(intent != null) {
+                sendToActivity(intent);
+            }
+
+        }
+
+    };
+
 
     public static boolean isRunning() {
         return isRunning;
@@ -108,11 +138,19 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
         }
 
 
+
+        final IntentFilter myFilter = new IntentFilter(ACTION_TO_SERVICE);
+
+        registerReceiver(mReceiver, myFilter);
+
+        this.lastLocation = null;
+
         return Long.valueOf(freqSeconds);
     }
 
     @Override
     public void onDestroy() {
+        unregisterReceiver(mReceiver);
         super.onDestroy();
 
         try {
@@ -218,19 +256,35 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
             this.lastLocation = currentLocation;
             return true;
         }
-        double distance = lastLocation.distanceTo(currentLocation);
-        Log.d(MQTTManager.TAG, "" + distance);
-        if(distance <= 10d){
+        double distance = SphericalUtil.computeDistanceBetween(new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude())
+                ,new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()));
+        Toast.makeText(this, ""+distance, Toast.LENGTH_SHORT).show();
+        if(distance <= 10.0){
+            this.lastLocation = currentLocation;
             return true;
+        }else{
+            this.lastLocation = currentLocation;
+            return false;
         }
-        return false;
     }
 
     private void calculcateAndSendDistanceAndArea(Location location){
+        if(lastLocation == null) {
+            return;
+        }
+        if(location == null) {
+            return;
+        }
         double distanceTo  = this.lastLocation.distanceTo(location);
-        Intent intent = new Intent();
-        intent.putExtra("distance", distanceTo);
-        sendBroadcast(intent);
+        final Intent intent = new Intent(GPSTrackerService.ACTION_FROM_SERVICE);
+
+        intent.putExtra("currentLat", String.valueOf(location.getLatitude()));
+        intent.putExtra("currentLng", String.valueOf(location.getLongitude()));
+
+        intent.putExtra("lastLat", String.valueOf(lastLocation.getLatitude()));
+        intent.putExtra("lastLng", String.valueOf(lastLocation.getLongitude()));
+
+        sendBroadcast(intent, "com.gramin.sakhala.gramintracker.broadcast.Manifest.permission.ALLOW");
     }
 
     @Override
@@ -238,9 +292,16 @@ public class GPSTrackerService extends Service implements GoogleLocationListener
         if(isLocationValid(getLastLocation(), location)) {
             Log.d(MQTTManager.TAG, "NEW LOCATION COME");
             sendLocation(location);
-            calculcateAndSendDistanceAndArea(location);
+            //calculcateAndSendDistanceAndArea(location);
             saveLocation(location);
         }
 
+    }
+
+    private void sendToActivity(Intent intent){
+
+        Log.d("BroadcastService", "Sending message to activity: ");
+
+        sendBroadcast(intent, "com.gramin.sakhala.gramintracker.broadcast.Manifest.permission.ALLOW");
     }
 }

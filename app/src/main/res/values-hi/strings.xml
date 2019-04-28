@@ -18,13 +18,13 @@
     <string name="details">डिटेल्स</string>
 
     <string name="forest_track">फारेस्ट</string>
-    <string name="forestArea">वनमंडल क्षेत्र</string>
+    <string name="forestArea">वन मण्डल</string>
     <string name="office_name">परिक्षेत्र का नाम</string>
-    <string name="location">वन क्षेत्र</string>
+    <string name="location">परिक्षेत्र</string>
     <string name="compartmentNo">कम्पार्टमेंट संख्या</string>
     <string name="plantingArea">रोपण क्षेत्र</string>
     <string name="plantingYear">रोपण वर्ष</string>
-    <string name="plantingPlants">रोपण पेड़</string>
+    <string name="plantingPlants">रोपित पौधे</string>
     <string name="Submit">जमा करें</string>
     <string name="Stop">बंद करें </string>
     <string name="Start">शुरू करें </string>
@@ -38,4 +38,18 @@
     <string name="scheme_secon">हरियाली प्रसार योजना</string>
     <string name="hindi">HINDI</string>
     <string name="english">ENGLISH</string>
+    <string name="kml">KML</string>
+    <string name="scheme_asstes">सम्पति</string>
+    <string name="SubforestArea">उप वन मण्डल</string>
+    <string name="location_helper">परिक्षेत्र सहायक वृत्त</string>
+    <string name="beet">बीट</string>
+    <string name="forest_type">वन का प्रकार</string>
+    <string name="estimate_area">प्रस्तावित क्षेत्रफल</string>
+    <string name="platinghelp">रोपण मद</string>
+    <string name="planting_type">रोपण प्रकार</string>
+    <string name="antral">अंतराल</string>
+    <string name="live_plants">जीवित पौधे</string>
+    <string name="khasra_no">कक्ष क्रमांक या खसरा क्रमांक</string>
+    <string name="name_officer">हितग्राही का नाम</string>
+    <string name="year_between">अंतराल</string>
 </resources>

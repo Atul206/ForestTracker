@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.app.PendingIntent;
@@ -14,13 +15,16 @@ import android.content.IntentSender;
 import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.PermissionChecker;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -59,18 +63,28 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.gramin.sakhala.gramintracker.R;
 import com.gramin.sakhala.gramintracker.callback.OnLoginTrigger;
+import com.gramin.sakhala.gramintracker.dto.PendingFileDto;
 import com.gramin.sakhala.gramintracker.helper.FirebaseHelper;
 import com.gramin.sakhala.gramintracker.helper.LocaleHelper;
 import com.gramin.sakhala.gramintracker.service.GPSTrackerService;
 import com.gramin.sakhala.gramintracker.service.UploadAlarmReceiver;
 import com.gramin.sakhala.gramintracker.util.Prefs;
 
+import org.joda.time.DateTime;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.READ_CONTACTS;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static com.gramin.sakhala.gramintracker.activity.MapsActivity.PENDING_POD_BROADCAST_REQUEST_CODE;
 
 /**
  * A login screen that offers login via email/password.
@@ -84,6 +98,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final int REQUEST_READ_CONTACTS = 0;
     private static final int REQUEST_LOCATION_CONTACTS = 1;
     private static final int REQUEST_WRITE_STORAGE = 2;
+    private static final int REQUEST_CAMERA = 3;
 
     private static final int RC_SIGN_IN = 1;
 
@@ -98,6 +113,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private FirebaseAuth.AuthStateListener mListener;
 
     private Button language;
+
+    private String ImagefileName;
+
+
+    PendingIntent pendingIntent;
+    AlarmManager manager;
 
 
     /**
@@ -120,6 +141,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     Button mEmailSignInButton;
     RelativeLayout firstScheme;
     RelativeLayout secondScheme;
+    RelativeLayout thirdScheme;
     ImageView mEmailSignInGoogleIco;
     Activity activity;
 
@@ -135,6 +157,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         language = (Button) findViewById(R.id.language);
         populateAutoComplete();
+        initAlaram();
 
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -183,11 +206,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         secondScheme = (RelativeLayout) findViewById(R.id.btn_second);
 
+        thirdScheme = (RelativeLayout) findViewById(R.id.btn_third);
+
         firstScheme.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 if(mAuth.getCurrentUser() != null) {
-                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    Intent intent = new Intent(LoginActivity.this, DivisionActivity.class);
                     intent.putExtra("title",getString(R.string.deparmanet_str));
                     startActivity(intent);
                 }else{
@@ -200,7 +225,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             @Override
             public void onClick(View view) {
                 if(mAuth.getCurrentUser() != null) {
-                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    Intent intent = new Intent(LoginActivity.this, DivisionActivity.class);
                     intent.putExtra("title",getString(R.string.scheme_secon));
                     startActivity(intent);
                 }else{
@@ -209,14 +234,32 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        mListener = new FirebaseAuth.AuthStateListener() {
+        thirdScheme.setOnClickListener(new OnClickListener() {
             @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-
-                if(firebaseAuth.getCurrentUser() != null) {
-                    //startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                    //finish();
+            public void onClick(View v) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (checkSelfPermission(CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                        Snackbar.make(findViewById(R.id.main_track), "Please provide Camera permission", Snackbar.LENGTH_SHORT).show();
+                        return;
+                    }
+                } else {
+                    int permission = PermissionChecker.checkSelfPermission(activity, CAMERA);
+                    if (permission != PermissionChecker.PERMISSION_GRANTED) {
+                        Snackbar.make(findViewById(R.id.main_track), "Please provide Camera permission", Snackbar.LENGTH_SHORT).show();
+                        return;
+                    }
                 }
+
+                Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+                startActivityForResult(intent, 0);
+            }
+        });
+
+        mListener = firebaseAuth -> {
+
+            if(firebaseAuth.getCurrentUser() != null) {
+                //startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                //finish();
             }
         };
         mLoginFormView = findViewById(R.id.login_form);
@@ -236,7 +279,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
 
         if(GPSTrackerService.isRunning()){
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            Intent intent = new Intent(LoginActivity.this, MapsActivity.class);
             intent.putExtra("title",getString(R.string.deparmanet_str));
             startActivity(intent);
         }
@@ -266,9 +309,38 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             return;
         }
 
+        if (!mayRequestCamera()) {
+            return;
+        }
+
 
 
         getLoaderManager().initLoader(0, null, this);
+    }
+
+    private boolean mayRequestCamera() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true;
+        }
+
+        if (checkSelfPermission(CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
+
+        if (shouldShowRequestPermissionRationale(CAMERA)) {
+            Snackbar.make(mEmailView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
+                    .setAction(android.R.string.ok, new View.OnClickListener() {
+                        @Override
+                        @TargetApi(Build.VERSION_CODES.M)
+                        public void onClick(View v) {
+                            requestPermissions(new String[]{CAMERA}, REQUEST_CAMERA);
+                        }
+                    });
+        } else {
+            requestPermissions(new String[]{CAMERA}, REQUEST_CAMERA);
+        }
+
+        return false;
     }
 
     private boolean mayRequestLocation() {
@@ -368,6 +440,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 populateAutoComplete();
             }
         }
+
+        if (requestCode == REQUEST_CAMERA) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                populateAutoComplete();
+            }
+        }
+
+
     }
 
 
@@ -641,6 +721,20 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             GoogleSignInAccount account = result.getSignInAccount();
             firebaseAuthWithGoogle(account);
         }
+
+
+        if (requestCode == 0 && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            File forestDir = new File(Environment.getExternalStorageDirectory() + "/forest_tracker/data/cache/image/");
+            if (!forestDir.exists()) {
+                forestDir.mkdirs();
+            }
+            ImagefileName = "";
+            ImagefileName = ImagefileName + "assets" + "_" + DateTime.now() + ".jpg";
+            new BackGroundImageTask(imageBitmap).execute();
+
+        }
     }
 
 
@@ -734,6 +828,63 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
+
+
+    class BackGroundImageTask extends AsyncTask<String, Void, Void> {
+
+        Bitmap bitmap;
+
+        public BackGroundImageTask(Bitmap kml) {
+            this. bitmap = kml;
+        }
+
+        @Override
+        protected Void doInBackground(String... strings) {
+            File myExternalFile = new File(Environment.getExternalStorageDirectory() + "/forest_tracker/data/cache/image/" + ImagefileName);
+            OutputStream stream = null;
+            try {
+                stream = new FileOutputStream(myExternalFile);
+                bitmap.compress(Bitmap.CompressFormat.JPEG,100,stream);
+                stream.flush();
+                stream.close();
+                List<PendingFileDto> pendingFileDtos = Prefs.getPendingPOD(activity);
+                if (pendingFileDtos != null) {
+                    pendingFileDtos.add(new PendingFileDto(myExternalFile.getPath(), ImagefileName));
+                } else {
+                    pendingFileDtos = new ArrayList<>();
+                    pendingFileDtos.add(new PendingFileDto(myExternalFile.getPath(), ImagefileName));
+                }
+                Prefs.addPendingPOD(activity, pendingFileDtos);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            postData();
+        }
+    }
+
+    public void postData() {
+        if (manager == null) {
+            manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+            manager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1 * 60 * 1000, pendingIntent);
+        }
+    }
+
+    public void initAlaram() {
+        Intent alarmIntent = new Intent(this, UploadAlarmReceiver.class);
+        pendingIntent = PendingIntent.getBroadcast(this, PENDING_POD_BROADCAST_REQUEST_CODE, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
 
 }
 

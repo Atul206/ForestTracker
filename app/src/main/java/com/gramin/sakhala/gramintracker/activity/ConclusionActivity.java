@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -70,13 +71,21 @@ public class ConclusionActivity extends AppCompatActivity implements OnMapReadyC
         length.setText(distance + " m.");
         area.setText(areaStr + " Sqm.");
 
+        area.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(ConclusionActivity.this, MapsActivity.class));
+            }
+        });
+
         snapshotReadyCallback = new GoogleMap.SnapshotReadyCallback() {
             @Override
             public void onSnapshotReady(Bitmap bitmap) {
 
             }
         };
-        initKml();
+        initKmlForMyMap();
+        initKmlForGoogleEarth();
 
     }
 
@@ -91,7 +100,37 @@ public class ConclusionActivity extends AppCompatActivity implements OnMapReadyC
         initAlaram();
     }
 
-    private void initKml() {
+    private void initKmlForMyMap() {
+        String kml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n" +
+                "  <Placemark>\n" +
+                "    <name>" + formData + " : Area : " + areaStr + "Sqm" + "</name>\n" +
+                "    <Polygon>\n" +
+                "      <extrude>1</extrude>\n" +
+                "      <altitudeMode>relativeToGround</altitudeMode>\n" +
+                "      <outerBoundaryIs>\n" +
+                "        <LinearRing>\n" +
+                "          <coordinates>\n" +
+                locations +
+                "          </coordinates>\n" +
+                "        </LinearRing>\n" +
+                "      </outerBoundaryIs>\n" +
+                "    </Polygon>\n" +
+                "  </Placemark>\n" +
+                "</kml>";
+
+        Log.d("KML file", kml);
+
+        File forestDir = new File(Environment.getExternalStorageDirectory() + "/forest_tracker/data/cache/");
+
+        if (!forestDir.exists()) {
+            forestDir.mkdirs();
+        }
+        new BackGroundTask(kml).execute();
+
+    }
+
+    private void initKmlForGoogleEarth() {
         String kml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n" +
                 "  <Placemark>\n" +

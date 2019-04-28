@@ -11,8 +11,13 @@ import com.gramin.sakhala.gramintracker.dto.PendingFileDto;
 import com.gramin.sakhala.gramintracker.service.GPSTrackerService;
 import com.gramin.sakhala.gramintracker.service.UploadService;
 
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Atul on 24-11-2016.
@@ -27,6 +32,7 @@ public class Prefs implements Constant {
     private static final String GPS_REGISTER = "gps_register";
     private static final String PENDIND_POD_LIST = "pending_pod_list";
     private static final String MOCKED_DATA = "moked_data";
+    private static final String MAP_MOCKED_DATA = "map_moked_data";
     private static String ENABLED = "enabled";
     private static String UPDATE_FREQ = "update_freq";
     private static String LOCALE_LANG = "locale_lang";
@@ -130,6 +136,22 @@ public class Prefs implements Constant {
         return preferences.getString(MOCKED_DATA, null);
     }
 
+    public static Map<String, String> getFuzDataMap(final Context context) {
+        if (context == null) return null;
+        SharedPreferences preferences = Prefs.get(context);
+        Type type = new TypeToken<Map<String, String>>(){}.getType();
+        return new Gson().fromJson(preferences.getString(MAP_MOCKED_DATA, "NA"),type);
+    }
+
+    public static void putFuzDataMap(final Context context, Map<String, String> data) {
+        SharedPreferences prefs = Prefs.get(context);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        editor.putString(MAP_MOCKED_DATA, new Gson().toJson(data));
+        editor.apply();
+
+    }
+
 
     public static void putPilotPayoutEnabled(final Context context, boolean fuzData) {
         SharedPreferences prefs = Prefs.get(context);
@@ -209,6 +231,11 @@ public class Prefs implements Constant {
         Gson gson = new Gson();
         return gson.fromJson(data, new TypeToken<ArrayList<LocationDTO>>() {
         }.getType());
+    }
+
+    public static String getOffDutyDate(long milliseconds) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("dd-MMMM-yyyy, HH:mm ");
+        return dateTimeFormatter.print(milliseconds);
     }
 }
 

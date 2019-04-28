@@ -18,9 +18,7 @@ import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.google.gson.Gson;
 import com.gramin.sakhala.gramintracker.R;
-import com.gramin.sakhala.gramintracker.dto.LocationDTO;
 import com.gramin.sakhala.gramintracker.dto.LocationProcessedDto;
 import com.gramin.sakhala.gramintracker.helper.LocaleHelper;
 import com.gramin.sakhala.gramintracker.service.GPSTrackerService;
@@ -43,16 +41,28 @@ public class TrackingActivity extends GPSTrackingBaseActivity {
     TextView distance;
     TextView Area;
 
+    DatabaseHandler db;
     private LocalBroadcastManager localBroadcastManager;
     private BroadcastReceiver registerReceiver;
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent != null && null != intent.getStringExtra("LOCATION_FETCH")) {
+                Double distance = intent.getDoubleExtra("distance", 0.0d);
+                Double area = intent.getDoubleExtra("calculatedArea", 0.0d);
+                UiUpdate(distance, area);
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracking);
         bindContent();
         activity = this;
-
-        if(getIntent() != null) {
+        db = new DatabaseHandler(this);
+        if (getIntent() != null) {
             formData = getIntent().getStringExtra("form_data");
         }
         LocaleHelper.setLocale(this, Prefs.getLocaleLang(getApplicationContext()));
@@ -63,14 +73,14 @@ public class TrackingActivity extends GPSTrackingBaseActivity {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     if (checkSelfPermission(ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                         Snackbar.make(findViewById(R.id.main_track), "Please provide location permission", Snackbar.LENGTH_SHORT).show();
-                        return ;
+                        return;
                     }
-                }else{
+                } else {
                     int permission = PermissionChecker.checkSelfPermission(activity, ACCESS_FINE_LOCATION);
 
                     if (permission != PermissionChecker.PERMISSION_GRANTED) {
                         Snackbar.make(findViewById(R.id.main_track), "Please provide location permission", Snackbar.LENGTH_SHORT).show();
-                        return ;
+                        return;
                     } else {
                         // permission not granted, you decide what to do
                     }
@@ -80,23 +90,24 @@ public class TrackingActivity extends GPSTrackingBaseActivity {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     if (checkSelfPermission(READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
                         Snackbar.make(findViewById(R.id.main_track), "Please provide contacts permission", Snackbar.LENGTH_SHORT).show();
-                        return ;
+                        return;
                     }
-                }else{
+                } else {
                     int permission = PermissionChecker.checkSelfPermission(activity, READ_CONTACTS);
                     if (permission != PermissionChecker.PERMISSION_GRANTED) {
                         Snackbar.make(findViewById(R.id.main_track), "Please provide contacts permission", Snackbar.LENGTH_SHORT).show();
-                        return ;
+                        return;
                     }
                 }
 
-                if(!GPSTrackerService.isRunning()) {
+                if (!GPSTrackerService.isRunning()) {
                     trackBtn.setBackgroundColor(getResources().getColor(R.color.textColor));
                     trackBtn.setText(getString(R.string.Stop));
                     trackBtn.setTextColor(getResources().getColor(R.color.colorBtn));
+                    db.deleteByGreaterThanZero();
                     setup(0);
                     Prefs.putFuzData(activity, formData);
-                }else{
+                } else {
                     setup(1);
                     trackBtn.setText(getString(R.string.Start));
                     trackBtn.setTextColor(getResources().getColor(android.R.color.white));
@@ -106,7 +117,7 @@ public class TrackingActivity extends GPSTrackingBaseActivity {
             }
         });
 
-        if(GPSTrackerService.isRunning()){
+        if (GPSTrackerService.isRunning()) {
             trackBtn.setBackgroundColor(getResources().getColor(R.color.textColor));
             trackBtn.setText(getString(R.string.Stop));
             trackBtn.setTextColor(getResources().getColor(R.color.colorBtn));
@@ -114,31 +125,30 @@ public class TrackingActivity extends GPSTrackingBaseActivity {
         localBroadcastManager = LocalBroadcastManager.getInstance(activity);
     }
 
-    private void bindContent(){
+    private void bindContent() {
         trackBtn = (Button) findViewById(R.id.startAndStopTrack);
         main = (RelativeLayout) findViewById(R.id.main_track);
     }
 
-    private void calculateData(){
-        DatabaseHandler db = new DatabaseHandler(this);
+    private void calculateData() {
         List<LocationModel> modelList = db.getAllLocation();
         List<LocationProcessedDto> locationProcessedDtos = new ArrayList<>();
         Location startLoc = new Location("startLoc");
         Location endLoc = new Location("endLoc");
         double distance = 0;
         String locationStr = "";
-        for(int i = 0; i < modelList.size(); i++) {
-            if(i == modelList.size() - 1){
+        for (int i = 0; i < modelList.size(); i++) {
+            if (i == modelList.size() - 1) {
                 startLoc.setLatitude(Double.valueOf(modelList.get(i).get_latitude()));
                 startLoc.setLongitude(Double.valueOf(modelList.get(i).get_longitude()));
                 endLoc.setLatitude(Double.valueOf(modelList.get(0).get_latitude()));
                 endLoc.setLongitude(Double.valueOf(modelList.get(0).get_longitude()));
-                double x = (startLoc.distanceTo(endLoc)/360.0) * (180 + endLoc.getLongitude());
-                double y = (startLoc.distanceTo(endLoc)/180.0) * (90 - endLoc.getLatitude());
+                double x = (startLoc.distanceTo(endLoc) / 360.0) * (180 + endLoc.getLongitude());
+                double y = (startLoc.distanceTo(endLoc) / 180.0) * (90 - endLoc.getLatitude());
                 locationProcessedDtos.add(new LocationProcessedDto(x, y, Double.valueOf(startLoc.distanceTo(endLoc))));
                 distance = distance + startLoc.distanceTo(endLoc);
 
-            }else {
+            } else {
                 startLoc.setLatitude(Double.valueOf(modelList.get(i).get_latitude()));
                 startLoc.setLongitude(Double.valueOf(modelList.get(i).get_longitude()));
                 endLoc.setLatitude(Double.valueOf(modelList.get(i + 1).get_latitude()));
@@ -151,22 +161,19 @@ public class TrackingActivity extends GPSTrackingBaseActivity {
             locationStr = locationStr + modelList.get(i).get_longitude() + " , " + modelList.get(i).get_latitude() + "\n";
         }
 
-        db.deleteByGreaterThanZero();
         /*startLoc.setLatitude(Double.valueOf(modelList.get(modelList.size() - 1).get_latitude()));
         endLoc.setLatitude(Double.valueOf(modelList.get(0).get_longitude()));
         double x = (startLoc.distanceTo(endLoc)/360.0) * (180 + endLoc.getLongitude());
         double y = (startLoc.distanceTo(endLoc)/180.0) * (90 - endLoc.getLatitude());
         locationProcessedDtos.add(new LocationProcessedDto(x, y, Double.valueOf(startLoc.distanceTo(endLoc))));
         */
-        double area = 0;
-        for(int i = 0; i < locationProcessedDtos.size(); i++) {
-            if(i == locationProcessedDtos.size() - 1) {
-                area = area + (locationProcessedDtos.get(i).getX()*locationProcessedDtos.get(0).getY() - locationProcessedDtos.get(i).getY()*locationProcessedDtos.get(0).getX());
-            }else {
-                area = area + (locationProcessedDtos.get(i).getX() * locationProcessedDtos.get(i + 1).getY() - locationProcessedDtos.get(i).getY() * locationProcessedDtos.get(i + 1).getX());
-            }
+        double areaX = 0, areaY = 0, area = 0;
+        for (int i = 0; i < locationProcessedDtos.size() - 1; i++) {
+            areaX = areaX + locationProcessedDtos.get(i).getX() * locationProcessedDtos.get(i + 1).getY();
+            areaY = areaY + locationProcessedDtos.get(i).getY() * locationProcessedDtos.get(i + 1).getX();
         }
-        area = area/2;
+
+        area = (areaX - areaY) / 2;
 
         Intent intent = new Intent(this, ConclusionActivity.class);
         intent.putExtra("distance", String.valueOf(distance));
@@ -193,17 +200,6 @@ public class TrackingActivity extends GPSTrackingBaseActivity {
         super.onDestroy();
         localBroadcastManager.unregisterReceiver(broadcastReceiver);
     }
-
-    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if(intent != null && null != intent.getStringExtra("LOCATION_FETCH")){
-                Double distance = intent.getDoubleExtra("distance", 0.0d);
-                Double area = intent.getDoubleExtra("calculatedArea", 0.0d);
-                UiUpdate(distance, area);
-            }
-        }
-    };
 
     private void UiUpdate(Double distanc, Double area) {
         new Handler().post(new Runnable() {

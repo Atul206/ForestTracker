@@ -4,8 +4,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseErrorHandler;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.rivigo.sdk.data.AllSensorData;
 import com.rivigo.sdk.data.RawAccelerometer;
@@ -15,6 +17,8 @@ import org.joda.time.DateTime;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.rivigo.sdk.mqtt.MQTTManager.TAG;
 
 /**
  * Created by Atul on 27-03-2017.
@@ -99,18 +103,25 @@ public class DatabaseHandler extends SQLiteOpenHelper implements CrudLocation, C
     }
 
     @Override
-    public void addLocation(LocationModel locationModel) {
+    public synchronized void addLocation(LocationModel locationModel) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(KEY_SOURCE_ID, String.valueOf(locationModel.get_source_id()));
-        values.put(KEY_DATA_CLIENT, String.valueOf(locationModel.get_dataClient()));
-        values.put(KEY_SPEED, String.valueOf(locationModel.get_speed()));
-        values.put(KEY_LATITUDE, String.valueOf(locationModel.get_latitude()));
-        values.put(KEY_LONGITUDE, String.valueOf(locationModel.get_longitude()));
-        values.put(KEY_LOCATION_TIMESTAMP, String.valueOf(locationModel.get_date_time()));
-        values.put(KEY_PAYLOAD, String.valueOf(locationModel.get_payload()));
-
-        db.insert(TABLE_LOCATION, null, values);
+        try {
+            ContentValues values = new ContentValues();
+            values.put(KEY_SOURCE_ID, String.valueOf(locationModel.get_source_id()));
+            values.put(KEY_DATA_CLIENT, String.valueOf(locationModel.get_dataClient()));
+            values.put(KEY_SPEED, String.valueOf(locationModel.get_speed()));
+            values.put(KEY_LATITUDE, String.valueOf(locationModel.get_latitude()));
+            values.put(KEY_LONGITUDE, String.valueOf(locationModel.get_longitude()));
+            values.put(KEY_LOCATION_TIMESTAMP, String.valueOf(locationModel.get_date_time()));
+            values.put(KEY_PAYLOAD, String.valueOf(locationModel.get_payload()));
+            db.insert(TABLE_LOCATION, null, values);
+        }catch (SQLException e){
+            db.close();
+            new Exception("Error with DB Open");
+            Log.d(TAG, "" + e);
+        } finally {
+            db.close();
+        }
     }
 
     @Override

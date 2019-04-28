@@ -19,7 +19,11 @@ import com.gramin.sakhala.gramintracker.util.Prefs;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends GPSTrackingBaseActivity {
+/**
+ * Created by atulsakhala on 17/08/18.
+ */
+
+public class SecondScheme extends GPSTrackingBaseActivity {
 
 
     private FirebaseAuth mAuth;
@@ -72,7 +76,7 @@ public class MainActivity extends GPSTrackingBaseActivity {
         }
 
         if(GPSTrackerService.isRunning()){
-            Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+            Intent intent = new Intent(SecondScheme.this, MapsActivity.class);
             intent.putExtra("form_data", Prefs.getFuzData(this));
             startActivity(intent);
         }
@@ -84,9 +88,9 @@ public class MainActivity extends GPSTrackingBaseActivity {
                 isEmpty();
             }
         });
+        //mAuth.addAuthStateListener(mListener);
 
         data = new HashMap<>();
-        //mAuth.addAuthStateListener(mListener);
 
     }
 
@@ -140,21 +144,9 @@ public class MainActivity extends GPSTrackingBaseActivity {
             cancel = true;
         }
 
-        if (TextUtils.isEmpty(forestType.getText())) {
-            forestType.setError(getString(R.string.error_invalid_field));
-            focusView = forestType;
-            cancel = true;
-        }
-
         if (TextUtils.isEmpty(estimate_area.getText())) {
             estimate_area.setError(getString(R.string.error_invalid_field));
             focusView = estimate_area;
-            cancel = true;
-        }
-
-        if (TextUtils.isEmpty(plantinghelp.getText())) {
-            plantinghelp.setError(getString(R.string.error_invalid_field));
-            focusView = plantinghelp;
             cancel = true;
         }
 
@@ -164,15 +156,23 @@ public class MainActivity extends GPSTrackingBaseActivity {
             cancel = true;
         }
 
-        if (TextUtils.isEmpty(plantingYearBetween.getText())) {
-            plantingYearBetween.setError(getString(R.string.error_invalid_field));
-            focusView = plantingYearBetween;
-            cancel = true;
-        }
 
         if (TextUtils.isEmpty(khasraNo.getText())) {
             khasraNo.setError(getString(R.string.error_invalid_field));
             focusView = khasraNo;
+            cancel = true;
+        }
+
+
+        if (TextUtils.isEmpty(officerName.getText())) {
+            officerName.setError(getString(R.string.error_invalid_field));
+            focusView = officerName;
+            cancel = true;
+        }
+
+        if (TextUtils.isEmpty(plantingYearBetween.getText())) {
+            plantingYearBetween.setError(getString(R.string.error_invalid_field));
+            focusView = plantingYearBetween;
             cancel = true;
         }
 
@@ -203,17 +203,17 @@ public class MainActivity extends GPSTrackingBaseActivity {
                     getString(R.string.plantingPlants) + " : " + plantingPlants.getText().toString()  + ", "+
                     getString(R.string.beet) + " : " + beet.getText().toString()  + ", " +
                     getString(R.string.location_helper) + " : " + locationHelper.getText().toString()  + ", " +
-                    getString(R.string.forest_type) + " : " + forestType.getText().toString()  + ", " +
                     getString(R.string.estimate_area) + " : " + estimate_area.getText().toString()  + ", " +
                     getString(R.string.live_plants) + " : " + livePlants.getText().toString()  + ", " +
-                    getString(R.string.platinghelp) + " : " + plantinghelp.getText().toString()  + ", "+
-                    getString(R.string.khasra_no) + " : " + khasraNo.getText().toString()  + ", "+
+                    getString(R.string.khasra_no) + " : " + khasraNo.getText().toString() + " , " +
                     getString(R.string.year_between) + " : " + plantingYearBetween.getText().toString() + " , " +
-                    getString(R.string.planting_type) + " : " + plantingType.getText().toString();
+                    getString(R.string.forest_type) + " : " + forestType.getText().toString() + " , " +
+                    getString(R.string.office_name) + " : " + officerName.getText().toString() + " , " +
+            getString(R.string.planting_type) + " : " + plantingType.getText().toString();
+
 
             data.put(getString(R.string.forestArea), forestArea.getText().toString());
             data.put(getString(R.string.SubforestArea) , SubforestArea.getText().toString());
-            data.put(getString(R.string.location) , location.getText().toString());
             data.put(getString(R.string.plantingYear) , plantingYear.getText().toString());
             data.put( getString(R.string.plantingPlants) , plantingPlants.getText().toString());
             data.put(getString(R.string.beet) , beet.getText().toString());
@@ -223,14 +223,15 @@ public class MainActivity extends GPSTrackingBaseActivity {
             data.put(getString(R.string.live_plants), livePlants.getText().toString());
             data.put(getString(R.string.platinghelp), plantinghelp.getText().toString());
             data.put(getString(R.string.khasra_no) , khasraNo.getText().toString());
-            data.put(getString(R.string.planting_type) , plantingType.getText().toString());
             data.put(getString(R.string.year_between), plantingYearBetween.getText().toString());
+            data.put(getString(R.string.office_name), officerName.getText().toString());
+            data.put(getString(R.string.planting_type) , plantingType.getText().toString());
 
             Prefs.putFuzDataMap(this, data);
 
-            Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+            Intent intent = new Intent(SecondScheme.this, MapsActivity.class);
             intent.putExtra("form_data", formData);
-            intent.putExtra("department", getString(R.string.deparmanet_str));
+            intent.putExtra("department", getString(R.string.scheme_secon));
             intent.putExtra("division_name", subDivision);
             startActivity(intent);
         }
@@ -253,12 +254,10 @@ public class MainActivity extends GPSTrackingBaseActivity {
         estimate_area = (EditText)findViewById(R.id.estimate_area);
         livePlants = (EditText)findViewById(R.id.livePlants);
         plantinghelp = (EditText)findViewById(R.id.plantinghelp);
-        khasraNo = (EditText)findViewById(R.id.khasra_no);
         officerName = (EditText)findViewById(R.id.nameOfficer);
+        khasraNo = (EditText)findViewById(R.id.khasra_no);
         plantingYearBetween = (EditText)findViewById(R.id.planting_year_between);
 
-
-        officerName.setVisibility(View.GONE);
 
         title = (TextView)findViewById(R.id.detail_title);
 

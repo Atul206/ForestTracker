@@ -8,13 +8,22 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.gramin.sakhala.gramintracker.dto.DetailDto;
 import com.gramin.sakhala.gramintracker.dto.PendingFileDto;
 import com.gramin.sakhala.gramintracker.util.Prefs;
+
+import org.joda.time.DateTime;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -63,23 +72,25 @@ public class UploadService extends IntentService {
                 final Boolean[] isSuccess = {false};
                 final PendingFileDto p = pendingFileDtoList.get(i);
                 Uri file = Uri.fromFile(new File(pendingFileDtoList.get(i).getFilePath()));
+                String filename = pendingFileDtoList.get(i).getFileName();
                 StorageReference riversRef = mStorageReference.child("kml/" + pendingFileDtoList.get(i).getFileName());
-
                 riversRef.putFile(file)
                         .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                             @Override
                             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                 // Get a URL to the uploaded content
                                 Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                                writeToDatabase(filename);
                                 Log.d("DOWNLOAD URL", downloadUrl.toString());
                                 isSuccess[0] = true;
                                 List<PendingFileDto> pendingFileDtos = Prefs.getPendingPOD(intentService);
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                     pendingFileDtos = pendingFileDtos.stream().filter(x -> !x.getFileName().equals(p.getFileName())).collect(Collectors.<PendingFileDto>toList());
                                 }else{
-                                    for(int  i = 0 ; i < pendingFileDtos.size(); i++) {
-                                        if(pendingFileDtos.get(i).getFileName().equals(p.getFileName())){
-                                            pendingFileDtoList.remove(i);
+                                    for(int  j = 0 ; j < pendingFileDtos.size(); j++) {
+                                        if(pendingFileDtos.get(j).getFileName().equals(p.getFileName())){
+                                            pendingFileDtos.remove(j);
+                                            break;
                                         }
                                     }
                                 }
@@ -97,8 +108,44 @@ public class UploadService extends IntentService {
             }
         }else{
             Log.d("Upload service","NO kml pending");
+            stopSelf();
         }
 
 
+    }
+
+    private void writeToDatabase(String downloadUrl) {
+        String uId = String.valueOf(DateTime.now().getMillis());
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        DetailDto detailDto = new DetailDto();
+        detailDto.setName(user.getDisplayName());
+        detailDto.setDownloadUrl(downloadUrl);
+        detailDto.setEmailId(user.getEmail());
+        detailDto.setProfilePicUrl(user.getPhotoUrl().toString());
+        detailDto.setCreatedDate(Prefs.getOffDutyDate(DateTime.now().getMillis()));
+        detailDto.setPhoneNumber(user.getPhoneNumber());
+        detailDto.setData(Prefs.getFuzDataMap(this));
+        if (user != null) {
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            DatabaseReference myRef = database.getReference("user");
+            myRef.child(uId).setValue(detailDto)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                           Log.d(TAG, "Write success");
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            // Write failed
+                            // ...
+                            Log.d(TAG, "Write fail");
+
+                        }
+                    });
+        } else {
+            Log.d(TAG, "user getting null");
+        }
     }
 }

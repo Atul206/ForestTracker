@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "333923253646-ouh3fhu18b8rm97fbq8m8kaimbar92mj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gramin.sakhala.gramintracker",
+            "certificate_hash": "2d197cf47d2824f4d085f5785704ab720392357c"
+          }
+        },
+        {
           "client_id": "333923253646-8cg9nk84qo0r21b6l9f7snlkv1rnu06e.apps.googleusercontent.com",
           "client_type": 3
         }
